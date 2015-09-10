@@ -8,7 +8,7 @@
  * subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
  */
 
-console.log("background page loaded!!!");
+console.log('background page loaded!!!');
 
 var pagePorts = new Map();
 var polymerPanelPorts = new Map();
