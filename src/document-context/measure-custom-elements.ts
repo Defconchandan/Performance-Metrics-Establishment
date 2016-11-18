@@ -167,68 +167,42 @@ interface Console {
     const originalDefine = window.customElements.define;
     const boundDefine: typeof originalDefine =
         originalDefine.bind(window.customElements);
-    let elementCounter = 0;
 
+    const counterMap = new Map<string, number>();
+    window['HTMLElement'] = class extends HTMLElement {
+      constructor() {
+        super();
+        const tagName = this.tagName.toLowerCase();
+        let counter = counterMap.get(tagName);
+        this[idSymbol] = counter;
+        counterMap.set(tagName, counter + 1);
+      }
+    };
     function wrappedDefineElement(
         tagName: string,
         constructor: CustomElementV1Constructor): CustomElementV1Constructor {
-      let wrappedConstructor: CustomElementV1Constructor =
-          class extends constructor {
-        constructor(...args: any[]) {
-          const counter = elementCounter++;
-          const startMark = `${prefix}start created ${tagName} ${counter}`;
-          const endMark = `${prefix}end created ${tagName} ${counter}`;
-          const measure = `${prefix}created ${tagName} ${counter}`;
-
-          window.performance.mark(startMark);
-          try {
-            super(...args);
-          } finally {
-            window.performance.mark(endMark);
-            window.performance.measure(measure, startMark, endMark);
-          }
-          this[idSymbol] = counter;
+      let proto = constructor.prototype;
+      function wrapCustomElementCallback(name: string, fullName: string) {
+        const original = proto[fullName];
+        if (!original) {
+          return;
         }
+        proto[fullName] = function(this: any) {
+          const counter: number = this[idSymbol];
 
-        connectedCallback() {
-          const superConnected = super.connectedCallback;
-          if (superConnected) {
-            makeMeasurement(
-                'connected', tagName, this[idSymbol],
-                superConnected.bind(this));
-          }
-        }
-
-        disconnectedCallback() {
-          const superDisconnected = super.disconnectedCallback;
-          if (superDisconnected) {
-            makeMeasurement(
-                'disconnected', tagName, this[idSymbol],
-                superDisconnected.bind(this));
-          }
-        }
-
-        attributeChangedCallback() {
-          const superAttribute = super.attributeChangedCallback;
-          if (superAttribute) {
-            makeMeasurement(
-                'attributeChanged', tagName, this[idSymbol],
-                superAttribute.bind(this));
-          }
-        }
-
-        _propertySetter() {
-          const superProperty = super['_propertySetter'];
-          if (superProperty) {
-            makeMeasurement(
-                'data', tagName, this[idSymbol], superProperty.bind(this));
-          }
-        }
+          return makeMeasurement(
+              name, tagName, counter, () => original.apply(this, arguments));
+        };
       }
+      wrapCustomElementCallback('connected', 'connectedCallback');
+      wrapCustomElementCallback('disconnected', 'disconnectedCallback');
+      wrapCustomElementCallback('attributeChanged', 'attributeChangedCallback');
+      wrapCustomElementCallback('data', '_propertySetter');
+      wrapCustomElementCallback('data', 'notifyPath');
+      counterMap.set(tagName.toLowerCase(), 0);
 
       return makeMeasurement(
-          'registered', tagName, null,
-          () => boundDefine(tagName, wrappedConstructor));
+          'registered', tagName, null, () => boundDefine(tagName, constructor));
     }
 
     window.customElements.define = wrappedDefineElement;
