@@ -191,31 +191,38 @@ interface Console {
         }
 
         connectedCallback() {
-          const connectedCallback = super.connectedCallback || (() => null);
-          makeMeasurement(
-              'connected', tagName, this[idSymbol], connectedCallback);
+          const superConnected = super.connectedCallback;
+          if (superConnected) {
+            makeMeasurement(
+                'connected', tagName, this[idSymbol],
+                superConnected.bind(this));
+          }
         }
 
         disconnectedCallback() {
-          const disconnectedCallback =
-              super.disconnectedCallback || (() => null);
-          makeMeasurement(
-              'disconnected', tagName, this[idSymbol], disconnectedCallback);
+          const superDisconnected = super.disconnectedCallback;
+          if (superDisconnected) {
+            makeMeasurement(
+                'disconnected', tagName, this[idSymbol],
+                superDisconnected.bind(this));
+          }
         }
 
         attributeChangedCallback() {
-          const attributeChangedCallback =
-              super.attributeChangedCallback || (() => null);
-          makeMeasurement(
-              'attributeChanged', tagName, this[idSymbol],
-              attributeChangedCallback);
+          const superAttribute = super.attributeChangedCallback;
+          if (superAttribute) {
+            makeMeasurement(
+                'attributeChanged', tagName, this[idSymbol],
+                superAttribute.bind(this));
+          }
         }
 
         _propertySetter() {
-          const propertyChangedCallback =
-              super['_propertySetter'] || (() => null);
-          makeMeasurement(
-              'data', tagName, this[idSymbol], propertyChangedCallback);
+          const superProperty = super['_propertySetter'];
+          if (superProperty) {
+            makeMeasurement(
+                'data', tagName, this[idSymbol], superProperty.bind(this));
+          }
         }
       }
 
