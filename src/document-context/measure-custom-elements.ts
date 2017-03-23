@@ -49,8 +49,6 @@ interface Window {
   _printElementStats(): void;
   _getElementMeasures(): ElementMeasurement[];
   _summarizeRange(start: number, end: number): void;
-
-  customElements?: CustomElementsRegistry;
 }
 
 interface CustomElementsRegistry {
@@ -59,13 +57,17 @@ interface CustomElementsRegistry {
 }
 
 interface CustomElementV1Constructor {
-  new (...args: any[]): V1CustomElement;
+  new(...args: any[]): V1CustomElement;
+  prototype: V1CustomElement;
 }
 
 interface V1CustomElement extends HTMLElement {
   connectedCallback?(): void;
   disconnectedCallback?(): void;
   attributeChangedCallback?(): void;
+
+  _propertySetter?(...args: any[]): void;
+  notifyPath?(...args: any[]): void;
 }
 
 interface ElementMeasurement {
@@ -77,8 +79,12 @@ interface ElementMeasurement {
   end: number;
 }
 
-type CallbackName =
-    'register'|'created'|'attached'|'detached'|'attributeChanged'|'data';
+type CallbackShorthand =
+    'register'|'created'|'connected'|'disconnected'|'attributeChanged'|'data';
+type Ce0CallbackName = 'attachedCallback'|'detachedCallback'|
+    'attributeChangedCallback'|'_propertySetter'|'notifyPath';
+type Ce1CallbackName = 'connectedCallback'|'disconnectedCallback'|
+    'attributeChangedCallback'|'_propertySetter'|'notifyPath';
 
 interface Console {
   timeStamp(label: string): void;
@@ -132,7 +138,8 @@ interface Console {
        * @param name Shorthand for the CE callback.
        * @param fullName The property name of the CE callback.
        */
-      function wrapCustomElementCallback(name: string, fullName: string) {
+      function wrapCustomElementCallback(
+          name: CallbackShorthand, fullName: Ce0CallbackName) {
         const original = proto[fullName] || (() => undefined);
         proto[fullName] = function(this: any) {
           const counter: number = this[idSymbol];
@@ -173,16 +180,16 @@ interface Console {
       constructor() {
         super();
         const tagName = this.tagName.toLowerCase();
-        let counter = counterMap.get(tagName);
+        let counter = counterMap.get(tagName) || 0;
         this[idSymbol] = counter;
         counterMap.set(tagName, counter + 1);
       }
     };
     function wrappedDefineElement(
-        tagName: string,
-        constructor: CustomElementV1Constructor): CustomElementV1Constructor {
+        tagName: string, constructor: CustomElementV1Constructor): void {
       let proto = constructor.prototype;
-      function wrapCustomElementCallback(name: string, fullName: string) {
+      function wrapCustomElementCallback(
+          name: CallbackShorthand, fullName: Ce1CallbackName) {
         const original = proto[fullName];
         if (!original) {
           return;
