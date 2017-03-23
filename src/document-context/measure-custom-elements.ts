@@ -51,11 +51,6 @@ interface Window {
   _summarizeRange(start: number, end: number): void;
 }
 
-interface CustomElementsRegistry {
-  define(tagName: string, constructor: CustomElementV1Constructor):
-      CustomElementV1Constructor;
-}
-
 interface CustomElementV1Constructor {
   new(...args: any[]): V1CustomElement;
   prototype: V1CustomElement;
