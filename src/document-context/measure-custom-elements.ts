@@ -75,7 +75,7 @@ interface ElementMeasurement {
 }
 
 type CallbackShorthand =
-    'register'|'created'|'connected'|'disconnected'|'attributeChanged'|'data';
+    'registered'|'created'|'connected'|'disconnected'|'attributeChanged'|'data';
 type Ce0CallbackName = 'attachedCallback'|'detachedCallback'|
     'attributeChangedCallback'|'_propertySetter'|'notifyPath';
 type Ce1CallbackName = 'connectedCallback'|'disconnectedCallback'|
@@ -97,7 +97,7 @@ interface Console {
   const prefix = '[WC] ';
 
   function makeMeasurement<R>(
-      operation: string, tagName: string, counter: number | null,
+      operation: CallbackShorthand, tagName: string, counter: number | null,
       cb: () => R): R {
     const counterSuffix = counter == null ? '' : ` ${counter}`;
     const startMark = `${prefix}start ${operation} ${tagName}${counterSuffix}`;
